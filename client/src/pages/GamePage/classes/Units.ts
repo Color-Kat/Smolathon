@@ -1,14 +1,16 @@
 import {BorderType, Tile} from "@pages/GamePage/classes/TilesDeck.tsx";
 
+export type UnitRoleType = 'traveler' | 'scientist' | 'astronaut';
+
 interface IUnit {
     id: number;
     team?: string;
     name: string;
     description: string;
     image: string;
-    occupied: boolean;
+    isOccupied: boolean;
 
-    role: 'traveler' | 'scientist';
+    role: UnitRoleType;
     scoreMultiplier: {[key: string]: number}
 }
 
@@ -20,10 +22,10 @@ export class Unit implements IUnit {
     public description: string;
     public image: string;
 
-    public role: 'traveler' | 'scientist';
+    public role: UnitRoleType;
     public scoreMultiplier: {[key: string]: number} = {city: 1, field1: 1, field2: 1, road1: 1, road2: 1, road3: 1, road4: 1 };
 
-    public occupied: boolean;
+    public isOccupied: boolean;
 
     constructor(unitData: IUnit) {
         this.id = unitData.id;
@@ -34,9 +36,7 @@ export class Unit implements IUnit {
         this.role = unitData.role;
         this.scoreMultiplier = {...this.scoreMultiplier, ...unitData.scoreMultiplier}; // Rewrite default values
 
-        console.log(this.scoreMultiplier);
-
-        this.occupied = unitData.occupied;
+        this.isOccupied = unitData.isOccupied;
     }
 
     private isDebug = false;
@@ -55,12 +55,19 @@ export class Unit implements IUnit {
         return this;
     }
 
+    public setOccupied(isOccupied: boolean) {
+        this.isOccupied = isOccupied;
+        return this;
+    }
+
     public getRole() {
         switch (this.role) {
             case 'traveler':
                 return 'Путешественник';
             case 'scientist':
                 return 'Учёный';
+            case 'scientist':
+                return 'Космонавт';
             default:
                 return 'Поэт';
         }
@@ -234,7 +241,7 @@ const traveler = new Unit({
     name: 'Николай Михайлович Пржевальский',
     description: 'Никола́й Миха́йлович Пржева́льский — русский путешественник, географ и натуралист, почётный член Русского географического общества. Предпринял несколько экспедиций в Центральную Азию, во время которых изучил территорию Монголии, Китая и Тибета. Генерал-майор. Брат адвоката Владимира и математика Евгения Пржевальских',
     image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDDNnZ-mO6UTZ4jSDCWlQ27RbJVmjr67Jw-w1uWqhH3z5S61OoT8JSmjxO4E03U5HXbBA&usqp=CAU',
-    occupied: false,
+    isOccupied: false,
     role: 'traveler',
     scoreMultiplier: {road1: 2, road2: 2, road3: 2, road4: 2}
 });
@@ -244,16 +251,27 @@ const scientist = new Unit({
     name: 'Василий Васильевич Докучаев',
     description: 'Васи́лий Васи́льевич Докуча́ев — русский геолог и почвовед, профессор минералогии и кристаллографии Санкт-Петербургского университета, директор Ново-Александрийского института сельского хозяйства и лесоводства. Известен как основоположник школы научного почвоведения и географии почв.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Dokuchaev_1888.jpg/274px-Dokuchaev_1888.jpg',
-    occupied: false,
+    isOccupied: false,
     role: 'scientist',
     scoreMultiplier: {field1: 2, field2: 2}
+});
+
+const astronaut = new Unit({
+    id: 2,
+    name: 'Юрий Алексеевич Гагарин',
+    description: 'Ю́рий Алексе́евич Гага́рин — лётчик-космонавт СССР, Герой Советского Союза. Совершил первый полёт в космос',
+    image: 'https://biblioclub.ru/services/fks.php?fks_action=get_file&fks_id=31762774&fks_flag=2',
+    isOccupied: false,
+    role: 'astronaut',
+    scoreMultiplier: {'city': 2}
 });
 /* ----- Units definition ----- */
 
 // Set of units
 const listOfUnits = [
     traveler,
-    scientist
+    scientist,
+    astronaut
 ];
 
 /**

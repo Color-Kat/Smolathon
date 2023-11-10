@@ -1,17 +1,13 @@
-import React, {memo, MouseEvent, useCallback, useState} from 'react';
+import React, {memo, MouseEvent, useCallback, useEffect, useState} from 'react';
 import {Transition} from "@headlessui/react";
 
-import tableWoodImage from "@assets/textures/tableWood.png";
-import {twJoin} from "tailwind-merge";
 import {Unit} from "@pages/GamePage/classes/Units.ts";
 import {PlaceSelector} from "@pages/GamePage/modules/UnitSelector/components/PlaceSelector.tsx";
 import {SelectedUnit} from "@pages/GamePage/modules/UnitSelector/components/SelectedUnit.tsx";
 import {ListOfUnits} from "@pages/GamePage/modules/UnitSelector/components/ListOfUnits.tsx";
-import {Tile} from "@pages/GamePage/classes/TilesDeck.tsx";
 import {GameStageContext, MapContext} from "@pages/GamePage/gameContext.ts";
 
 interface UnitSelectorProps {
-    units: Unit[];
     PlacedTile: any;
 
     isSelectingUnit: boolean;
@@ -21,7 +17,6 @@ interface UnitSelectorProps {
 }
 
 export const UnitSelector: React.FC<UnitSelectorProps> = memo(({
-                                                                   units,
                                                                    PlacedTile,
 
                                                                    isSelectingUnit,
@@ -31,6 +26,7 @@ export const UnitSelector: React.FC<UnitSelectorProps> = memo(({
                                                                }) => {
     const {setMap} = React.useContext(MapContext);
     const {setStage} = React.useContext(GameStageContext);
+    const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
 
     // Close modal
     const closeSelectingUnit = useCallback(() => {
@@ -43,7 +39,12 @@ export const UnitSelector: React.FC<UnitSelectorProps> = memo(({
         if (e.target === e.currentTarget) closeSelectingUnit();
     };
 
-    const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+    // Close modal using escape
+    const handleEscClose = (e: KeyboardEvent) => e.keyCode === 27 ? closeSelectingUnit() : null;
+    useEffect(() => {
+        document.addEventListener('keydown', handleEscClose);
+        return () => {document.removeEventListener('keydown', handleEscClose);};
+    }, []);
 
     return (
         <Transition
@@ -79,7 +80,6 @@ export const UnitSelector: React.FC<UnitSelectorProps> = memo(({
 
                     {/* Selector of units */}
                     <ListOfUnits
-                        units={units}
                         selectedUnit={selectedUnit}
                         setSelectedUnit={setSelectedUnit}
                     />

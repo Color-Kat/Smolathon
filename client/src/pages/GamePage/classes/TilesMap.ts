@@ -15,7 +15,7 @@ export class TilesMap {
         this.tiles = tiles ?? [];
     }
 
-    private isDebug = true;
+    private isDebug = false;
 
     private debug(...args: any[]) {
         if (this.isDebug) {
@@ -274,7 +274,7 @@ export class TilesMap {
                         if (result.count === 0) result.count = 1; // At least this tile is a correct object tile
                         let data = checkTile(mapTile, mapSide); // Check another tile
                         if (data === false) {
-                            mapTile.className = className + " border-yellow-500";
+                            if(this.isDebug) mapTile.className = className + " border-yellow-500";
                             return false;
                         }
 
@@ -284,8 +284,8 @@ export class TilesMap {
                 }
 
                 // For debug visualize algorithm
-                // if (this.isDebug)
-                mapTile.className = className;
+                if (this.isDebug)
+                    mapTile.className = className;
             }
 
             this.debug('hasAlreadyCheckedNeighbor: ', hasAlreadyCheckedRoadNeighbor);
@@ -338,6 +338,7 @@ export class TilesMap {
         // ========== Calculate score ==========
 
         const score: { [key: string]: number } = {};
+        const freeUnitIds = [];
         for (const [objectName, objectData] of Object.entries(objectsData)) {
             if (objectData === false) continue;
 
@@ -349,10 +350,10 @@ export class TilesMap {
 
             for (const unit of objectData.units) {
                 score[unit.team] = rawPoints * unit.scoreMultiplier[objectName];
-                console.log(unit);
+                freeUnitIds.push(unit.id);
             }
         }
 
-        return score;
+        return {score, freeUnitIds};
     }
 }

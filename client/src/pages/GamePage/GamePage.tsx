@@ -1,5 +1,5 @@
 import {Helmet} from "react-helmet";
-import React, {useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import TilesDeck, {Tile} from "./classes/TilesDeck";
 import {Unit, units as listOfUnits} from "./classes/Units.ts";
 import {Board} from "./modules/Board/Board";
@@ -8,6 +8,7 @@ import {ControlPanel} from "@pages/GamePage/modules/ControlPanel/ControlPanel.ts
 import {Teams} from "@pages/GamePage/modules/Teams/Teams.tsx";
 import {GameStageContext, GameStagesType, MapContext} from "@pages/GamePage/gameContext.ts";
 import {Information} from "@pages/GamePage/modules/Inforamtion/Information.tsx";
+import {defaultTeams} from "@pages/GamePage/classes/teams.ts";
 
 /**
  * This component renders the game page.
@@ -17,9 +18,10 @@ import {Information} from "@pages/GamePage/modules/Inforamtion/Information.tsx";
  * @constructor
  */
 export const GamePage = () => {
-    const myTeam = 'blue';
-    const teams = ['blue'];
-    const tileSize = 192;
+
+    const myTeamColor = 'blue';
+
+    const [teams, setTeams] = useState(defaultTeams);
 
     // State with current stage of the game
     const [stage, setStage] = useState<GameStagesType>('emptyMap');
@@ -37,7 +39,7 @@ export const GamePage = () => {
     // State for current tile
     const [currentTile, setCurrentTile] = useState<Tile | undefined>(undefined);
 
-    const endOfTurn = () => {
+    const endOfTurn = useCallback(() => {
         // Hide tooltip, tile and unit information
         setTooltip("");
         setTileInformation(null);
@@ -47,9 +49,35 @@ export const GamePage = () => {
         setCurrentTile(undefined);
 
         // Pass the turn to the next player
-        // passTheTurn() 
-    };
-    // console.log(map);
+        passTheTurn()
+    }, []);
+
+    const passTheTurn = () => {
+        // Change stage to wait
+        setStage('wait');
+
+        // Generating data to send to other players
+        const data = {
+            map,
+            teams
+        };
+
+        setStage('takeTile');
+    }
+
+    useEffect(() => {
+       const socket = new WebSocket('ws://localhost:5001/multiplayer');
+
+       socket.onopen = () => {
+           console.log('Connected');
+       }
+
+       socket.onmessage = (event) => {
+           console.log(event.data);
+       }
+
+       setTimeout(() => socket.send('hi, server'), 1000)
+    });
 
     return (
         <GameStageContext.Provider value={{
@@ -63,14 +91,19 @@ export const GamePage = () => {
                 </Helmet>
 
                 <MapContext.Provider value={{
-                    myTeam,
-                    tileSize,
+                    myTeamColor,
+                    teams,
+                    setTeams,
+
+                    tileSize: 192,
                     map,
                     setMap,
                     currentTile,
+
                     setTooltip,
                     setTileInformation,
                     setUnitInformation,
+
                     endOfTurn
                 }}>
                     <div className="flex h-full w-full relative">
@@ -85,16 +118,12 @@ export const GamePage = () => {
                         {/* Users list and score */}
                         <Teams
                             teams={teams}
-                            units={units}
                         />
 
                         {/* Board with the map */}
                         <Board
                             currentTile={currentTile}
                             setCurrentTile={setCurrentTile}
-
-                            myTeam={myTeam}
-                            units={units}
 
                             endOfTurn={endOfTurn}
                         />
