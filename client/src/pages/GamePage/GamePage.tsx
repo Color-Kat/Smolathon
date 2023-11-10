@@ -1,5 +1,5 @@
 import {Helmet} from "react-helmet";
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import TilesDeck, {Tile} from "./classes/TilesDeck";
 import {Unit, units as listOfUnits} from "./classes/Units.ts";
 import {Board} from "./modules/Board/Board";
@@ -8,7 +8,8 @@ import {ControlPanel} from "@pages/GamePage/modules/ControlPanel/ControlPanel.ts
 import {Teams} from "@pages/GamePage/modules/Teams/Teams.tsx";
 import {GameStageContext, GameStagesType, MapContext} from "@pages/GamePage/gameContext.ts";
 import {Information} from "@pages/GamePage/modules/Inforamtion/Information.tsx";
-import {defaultTeams} from "@pages/GamePage/classes/teams.ts";
+import {defaultTeams, TeamsType} from "@pages/GamePage/classes/teams.ts";
+import {useMultiplayer} from "@pages/GamePage/hooks/useMultiplayer.ts";
 
 /**
  * This component renders the game page.
@@ -18,7 +19,6 @@ import {defaultTeams} from "@pages/GamePage/classes/teams.ts";
  * @constructor
  */
 export const GamePage = () => {
-
     const myTeamColor = 'blue';
 
     const [teams, setTeams] = useState(defaultTeams);
@@ -33,12 +33,17 @@ export const GamePage = () => {
 
     // Get shuffled deck of tiles
     const [deck, setDeck] = useState((new TilesDeck()).getShuffledDeck());
-    const [units, setUnits] = useState(listOfUnits);
+    // Map state
     const [map, setMap] = useState<Tile[]>([]);
-
     // State for current tile
     const [currentTile, setCurrentTile] = useState<Tile | undefined>(undefined);
 
+    /**
+     * Reset information states, reset current tile.
+     * Pass the move.
+     *
+     * @param updatedMap - use it because original map state is not updated here at the moment of running this function.
+     */
     const endOfTurn = useCallback(() => {
         // Hide tooltip, tile and unit information
         setTooltip("");
@@ -49,35 +54,25 @@ export const GamePage = () => {
         setCurrentTile(undefined);
 
         // Pass the turn to the next player
-        passTheTurn()
-    }, []);
+        handlePassTheMove(map, teams);
+    }, [map, teams]);
+    useEffect(() => {
+        if (stage === 'endOfTurn') endOfTurn();
+    }, [stage])
 
-    const passTheTurn = () => {
+    const {passTheMove} = useMultiplayer({map, setMap, teams, setTeams});
+    const handlePassTheMove = (updatedMap: Tile[], updatedTeams: TeamsType) => {
         // Change stage to wait
         setStage('wait');
 
-        // Generating data to send to other players
-        const data = {
-            map,
-            teams
-        };
+        // Pass the move to the next player in the multiplayer
+        passTheMove({
+            map: map,
+            teams: teams
+        })
 
         setStage('takeTile');
     }
-
-    useEffect(() => {
-       const socket = new WebSocket('ws://localhost:5001/multiplayer');
-
-       socket.onopen = () => {
-           console.log('Connected');
-       }
-
-       socket.onmessage = (event) => {
-           console.log(event.data);
-       }
-
-       setTimeout(() => socket.send('hi, server'), 1000)
-    });
 
     return (
         <GameStageContext.Provider value={{
