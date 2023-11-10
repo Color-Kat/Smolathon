@@ -1,4 +1,3 @@
-
 /**
  * If value is true, return random array value,
  * else return random array index.
