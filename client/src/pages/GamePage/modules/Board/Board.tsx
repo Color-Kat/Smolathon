@@ -60,7 +60,6 @@ export const Board: React.FC<BoardProps> = ({
         // Set starting map with one default tile (Empty map - stage 0)
         if (stage === 'emptyMap') {
             setMap((new TilesMap()).getStartingMap(mapCenter, tileSize));
-            setStage('takeTile');
         }
 
         if (stage == 'tilePlaced') placeTileCallback();
@@ -115,18 +114,16 @@ export const Board: React.FC<BoardProps> = ({
         const score = result.score;
         const freeUnitIds = result.freeUnitIds;
 
-        console.log(score);
-
         // Update teams data
         setTeams(prev => {
             const newTeams = {...prev};
 
             // Mark free units as not occupied
-            newTeams[myTeamColor].units.map(unit => freeUnitIds.includes(unit.id) ? unit.setOccupied(false) : unit);
+            newTeams[myTeamColor]?.units.map(unit => freeUnitIds.includes(unit.id) ? unit.setOccupied(false) : unit);
 
             // Update score
             for(let teamColor in newTeams) {
-                newTeams[teamColor as TeamColorType].score += score[teamColor] ?? 0;
+                newTeams[teamColor as TeamColorType]!.score += score[teamColor] ?? 0;
             }
 
             return newTeams;

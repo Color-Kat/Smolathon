@@ -7,33 +7,56 @@ interface InformationProps {
     tileInformation: Tile | null;
     unitInformation: Unit | null;
     tooltip: string;
+    infoMessage: string;
+
+    setTileInformation: React.Dispatch<React.SetStateAction<Tile | null>>;
+    setUnitInformation: React.Dispatch<React.SetStateAction<Unit | null>>;
+    setInfoMessage: React.Dispatch<React.SetStateAction<string>>;
+    setTooltip: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export const Information: React.FC<InformationProps> = memo(({
-                                                             tileInformation,
-                                                             unitInformation,
-                                                             tooltip
+                                                                 tileInformation,
+                                                                 unitInformation,
+                                                                 tooltip,
+                                                                 infoMessage,
+
+                                                                 setInfoMessage,
+                                                                 setTooltip,
+                                                                 setTileInformation,
+                                                                 setUnitInformation,
                                                              }) => {
 
-    const {setTooltip, setUnitInformation, setTileInformation} = React.useContext(MapContext);
-
     const closeInformation = useCallback(() => {
+        setInfoMessage('');
         setTooltip('');
         setUnitInformation(null);
         setTileInformation(null);
     }, []);
 
-    if(tooltip)
+    if (infoMessage)
         return (
-            <div className="absolute right-0 bottom-0 bg-black/40 rounded-tl-xl z-50 p-4 text-gray-100 cursor-pointer" onClick={closeInformation}>
+            <div className="absolute right-0 bottom-0 bg-black/40 rounded-tl-xl z-50 p-4 text-gray-100 cursor-pointer"
+                 onClick={closeInformation}>
+                {/*<h3 className="text-xl font-semibold">Информация</h3>*/}
+                <p className="text-gray-300">{infoMessage}</p>
+            </div>
+        );
+
+    if (tooltip)
+        return (
+            <div className="absolute right-0 bottom-0 bg-black/40 rounded-tl-xl z-50 p-4 text-gray-100 cursor-pointer"
+                 onClick={closeInformation}>
                 <h3 className="text-xl font-semibold">Подсказка</h3>
                 <p className="text-gray-300">{tooltip}</p>
             </div>
         );
 
-    if(unitInformation)
+    if (unitInformation)
         return (
-            <div className="absolute right-0 bottom-0 bg-black/40 rounded-tl-xl z-50 p-4 text-gray-100 max-w-2xl cursor-pointer" onClick={closeInformation}>
+            <div
+                className="absolute right-0 bottom-0 bg-black/40 rounded-tl-xl z-50 p-4 text-gray-100 max-w-2xl cursor-pointer"
+                onClick={closeInformation}>
                 <div className="flex flex-row gap-3">
                     <img src={unitInformation.image} alt={unitInformation.name} className="h-36"/>
 
@@ -45,9 +68,11 @@ export const Information: React.FC<InformationProps> = memo(({
             </div>
         );
 
-    if(tileInformation)
+    if (tileInformation)
         return (
-            <div className="absolute right-0 bottom-0 bg-black/40 rounded-tl-xl z-50 p-4 text-gray-100 max-w-2xl cursor-pointer" onClick={closeInformation}>
+            <div
+                className="absolute right-0 bottom-0 bg-black/40 rounded-tl-xl z-50 p-4 text-gray-100 max-w-2xl cursor-pointer"
+                onClick={closeInformation}>
                 <div className="flex flex-row gap-3">
                     <img src={tileInformation.realPhoto} alt={tileInformation.name} className="h-36"/>
 

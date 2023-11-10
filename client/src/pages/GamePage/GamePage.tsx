@@ -8,8 +8,12 @@ import {ControlPanel} from "@pages/GamePage/modules/ControlPanel/ControlPanel.ts
 import {Teams} from "@pages/GamePage/modules/Teams/Teams.tsx";
 import {GameStageContext, GameStagesType, MapContext} from "@pages/GamePage/gameContext.ts";
 import {Information} from "@pages/GamePage/modules/Inforamtion/Information.tsx";
-import {defaultTeams, TeamsType} from "@pages/GamePage/classes/teams.ts";
+import {defaultTeams, TeamColorType, TeamsType} from "@pages/GamePage/classes/teams.ts";
 import {useMultiplayer} from "@pages/GamePage/hooks/useMultiplayer.ts";
+import {IUser} from "@/store/auth/auth.slice.ts";
+import {RainbowLoader} from "@UI/Loaders";
+import {RippleButton} from "@components/Buttons";
+import {PurpleButton} from "@UI/Buttons";
 
 /**
  * This component renders the game page.
@@ -19,17 +23,24 @@ import {useMultiplayer} from "@pages/GamePage/hooks/useMultiplayer.ts";
  * @constructor
  */
 export const GamePage = () => {
-    const myTeamColor = 'blue';
+    const roomId = '1';
+    const user: IUser = {
+        id: Date.now(),
+        name: 'ColorKat',
+    };
 
-    const [teams, setTeams] = useState(defaultTeams);
+    const [myTeamColor, setMyTeamColor] = useState<TeamColorType | null>(null); // Will be set by server
+    const [teams, setTeams] = useState<TeamsType>(defaultTeams);
 
     // State with current stage of the game
-    const [stage, setStage] = useState<GameStagesType>('emptyMap');
+    const [stage, setStage] = useState<GameStagesType>('notStarted');
+    const isConnecting = !myTeamColor;
 
     // States for information about current tile, unit and tooltip.
+    const [infoMessage, setInfoMessage] = useState("");
+    const [tooltip, setTooltip] = useState("");
     const [tileInformation, setTileInformation] = useState<Tile | null>(null);
     const [unitInformation, setUnitInformation] = useState<Unit | null>(null);
-    const [tooltip, setTooltip] = useState("");
 
     // Get shuffled deck of tiles
     const [deck, setDeck] = useState((new TilesDeck()).getShuffledDeck());
@@ -37,6 +48,37 @@ export const GamePage = () => {
     const [map, setMap] = useState<Tile[]>([]);
     // State for current tile
     const [currentTile, setCurrentTile] = useState<Tile | undefined>(undefined);
+
+    /* ------- Functions for multiplayer ------- */
+    // Retrieve methods for multiplayer
+    const {
+        joinRoom,
+        startGame,
+        passTheMove,
+        disconnect
+    } = useMultiplayer({
+        setStage,
+        setDeck,
+        setMyTeamColor, teams, setTeams,
+        map, setMap,
+        setInfoMessage
+    });
+
+    useEffect(() => {
+        setTimeout(() => {
+            // Join user to the room
+            joinRoom(roomId, user);
+        }, 1000);
+    }, []);
+
+    // Catch disconnect event
+    useEffect(() => {
+        const handleBeforeUnload = () => disconnect(roomId, user);
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+        ;
+    }, []);
+    /* ------- Functions for multiplayer ------- */
 
     /**
      * Reset information states, reset current tile.
@@ -54,25 +96,29 @@ export const GamePage = () => {
         setCurrentTile(undefined);
 
         // Pass the turn to the next player
-        handlePassTheMove(map, teams);
+        handlePassTheMove();
     }, [map, teams]);
     useEffect(() => {
         if (stage === 'endOfTurn') endOfTurn();
-    }, [stage])
+    }, [stage]);
 
-    const {passTheMove} = useMultiplayer({map, setMap, teams, setTeams});
-    const handlePassTheMove = (updatedMap: Tile[], updatedTeams: TeamsType) => {
+    const handlePassTheMove = () => {
         // Change stage to wait
         setStage('wait');
 
         // Pass the move to the next player in the multiplayer
         passTheMove({
-            map: map,
-            teams: teams
-        })
+            roomId,
+            user,
+            data: {
+                deck: deck,
+                map: map,
+                teams: teams
+            }
+        });
+    };
 
-        setStage('takeTile');
-    }
+    console.log('STAGE:', stage);
 
     return (
         <GameStageContext.Provider value={{
@@ -85,52 +131,71 @@ export const GamePage = () => {
                     <link rel="canonical" href={import.meta.env.VITE_APP_URL + '/game'}/>
                 </Helmet>
 
-                <MapContext.Provider value={{
-                    myTeamColor,
-                    teams,
-                    setTeams,
+                {!myTeamColor && <RainbowLoader className="mt-24"/>}
 
-                    tileSize: 192,
-                    map,
-                    setMap,
-                    currentTile,
-
-                    setTooltip,
-                    setTileInformation,
-                    setUnitInformation,
-
-                    endOfTurn
-                }}>
-                    <div className="flex h-full w-full relative">
-                        {/* Control panel with buttons and the deck of tiles */}
-                        <ControlPanel
-                            currentTile={currentTile}
-                            setCurrentTile={setCurrentTile}
-                            deck={deck}
-                            setDeck={setDeck}
-                        />
-
-                        {/* Users list and score */}
-                        <Teams
-                            teams={teams}
-                        />
-
-                        {/* Board with the map */}
-                        <Board
-                            currentTile={currentTile}
-                            setCurrentTile={setCurrentTile}
-
-                            endOfTurn={endOfTurn}
-                        />
-
-                        {/* Information about placed tile */}
-                        <Information
-                            tileInformation={tileInformation}
-                            unitInformation={unitInformation}
-                            tooltip={tooltip}
-                        />
+                {stage == 'notStarted' && !isConnecting &&
+                    // TODO : implement errors when connection
+                    <div className="flex items-center h-full w-full absolute inset-0">
+                        <RippleButton onClick={() => startGame(roomId)} ButtonComponent={PurpleButton}>
+                            Начать игру
+                        </RippleButton>
                     </div>
-                </MapContext.Provider>
+                }
+
+                {stage !== 'notStarted' && !isConnecting &&
+                    <MapContext.Provider value={{
+                        myTeamColor,
+                        teams,
+                        setTeams,
+
+                        tileSize: 192,
+                        map,
+                        setMap,
+                        currentTile,
+
+                        setInfoMessage,
+                        setTooltip,
+                        setTileInformation,
+                        setUnitInformation,
+
+                        endOfTurn
+                    }}>
+                        <div className="flex h-full w-full relative">
+                            {/* Control panel with buttons and the deck of tiles */}
+                            <ControlPanel
+                                currentTile={currentTile}
+                                setCurrentTile={setCurrentTile}
+                                deck={deck}
+                                setDeck={setDeck}
+                            />
+
+                            {/* Users list and score */}
+                            <Teams
+                                teams={teams}
+                            />
+
+                            {/* Board with the map */}
+                            <Board
+                                currentTile={currentTile}
+                                setCurrentTile={setCurrentTile}
+
+                                endOfTurn={endOfTurn}
+                            />
+                        </div>
+                    </MapContext.Provider>
+                }
+
+                {/* Information messages, tooltips and info */}
+                <Information
+                    tileInformation={tileInformation}
+                    unitInformation={unitInformation}
+                    tooltip={tooltip}
+                    infoMessage={infoMessage}
+                    setInfoMessage={setInfoMessage}
+                    setTooltip={setTooltip}
+                    setTileInformation={setTileInformation}
+                    setUnitInformation={setUnitInformation}
+                />
             </div>
         </GameStageContext.Provider>
     );
