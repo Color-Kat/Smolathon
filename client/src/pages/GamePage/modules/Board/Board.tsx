@@ -1,22 +1,21 @@
-import React, {MouseEvent, useRef, useState, useEffect, Fragment, useCallback} from "react";
-import {twJoin, twMerge} from "tailwind-merge";
+import React, {useRef, useState, useEffect, Fragment, useCallback, useContext} from "react";
+import {twJoin} from "tailwind-merge";
 
-import {ITile, Tile} from "../../classes/TilesDeck";
+import {Tile} from "../../classes/TilesDeck";
 
 import {MapNavigation} from "@modules/MapNavigation/MapNavigation.tsx";
 import {useTileCursor} from "./hooks/useTileCursor.tsx";
-import {Dialog, Transition} from "@headlessui/react";
 
 import tableWoodImage from "@assets/textures/tableWood.png";
 import {UnitSelector} from "@pages/GamePage/modules/UnitSelector/UnitSelector.tsx";
-import {Unit, units} from "@pages/GamePage/classes/Units.ts";
+import {Unit} from "@pages/GamePage/classes/Units.ts";
 import {MapTile} from "@pages/GamePage/modules/Board/components/MapTile.tsx";
+import {GameStageContext, GameStagesType, MapContext} from "@pages/GamePage/gameContext.ts";
+import {TilesMap} from "@pages/GamePage/classes/TilesMap.ts";
+import {useLogoutMutation} from "@/store/auth/auth.api.ts";
 
 
 interface BoardProps {
-    map: Tile[];
-    setMap: React.Dispatch<React.SetStateAction<Tile[]>>;
-
     currentTile: Tile | undefined;
     setCurrentTile: React.Dispatch<React.SetStateAction<Tile | undefined>>;
 
@@ -26,9 +25,14 @@ interface BoardProps {
     endOfTurn: () => void;
 }
 
-export const Board: React.FC<BoardProps> = ({
-                                                map, setMap,
 
+/**
+ * This component renders the board: tile cursor, map with tile, units, unit selector.
+ * And Board component is responsible for game mechanics realization
+ * and the game stage management (Place tile, Place Unit, Calculate score).
+ *
+ */
+export const Board: React.FC<BoardProps> = ({
                                                 currentTile,
                                                 setCurrentTile,
 
@@ -36,41 +40,44 @@ export const Board: React.FC<BoardProps> = ({
 
                                                 endOfTurn
                                             }) => {
+    const {map, setMap, tileSize, setTooltip} = React.useContext(MapContext);
+    const {setStage, stage} = useContext(GameStageContext);
 
-    const tileSize = 192;
     const mapSize = tileSize * 70;
     const mapCenter = mapSize / 2 - tileSize / 2;
     const mapNavigationRef = useRef<HTMLUListElement>(null);
     const [mapScale, setMapScale] = useState(1);
 
+    // Management of game turn stages
     useEffect(() => {
-        // Set start tile
-        setMap([new Tile({
-            id: 0,
-            design: "D",
-            borders: ['city', 'road', 'field', 'road'],
-            pennant: false,
-            coords: {x: mapCenter - mapCenter % tileSize, y: mapCenter - mapCenter % tileSize}
-        })]);
-    }, []);
+        // Set starting map with one default tile (Empty map - stage 0)
+        if (stage === 'emptyMap')
+            setMap((new TilesMap()).getStartingMap(mapCenter, tileSize));
 
-    const [isSelectingUnit, setIsSelectingUnit] = useState(false);
-    const openUnitSelectorModal = () => {
+        if (stage == 'tilePlaced') placeTileCallback();
 
-        setCurrentTile(undefined);
-        setIsSelectingUnit(true);
+        if (stage == 'unitPlaced') scoring();
 
-        // endOfTurn();
-    };
+        if (stage == 'endOfTurn') {
+            setStage('wait');
+            endOfTurn();
+        }
+    }, [stage]);
 
+    // Tile cursor (Place tile stage)
     const {
-        showTile,
-        tilePosition,
         handleMouseMove,
         handleMouseEnter,
         handleMouseLeave,
+
         placeTile,
-        PlacedTile
+        PlacedTile,
+
+        tilePosition,
+        showTile,
+        wrongAnimation,
+
+        TileCursor,
     } = useTileCursor({
         tileSize,
         mapScale,
@@ -79,16 +86,30 @@ export const Board: React.FC<BoardProps> = ({
         setMap,
 
         currentTile,
-
-        placeTileCallback: openUnitSelectorModal
     });
 
+    // Unit selector (Unit selection stage)
+    const [isSelectingUnit, setIsSelectingUnit] = useState(false);
+    const placeTileCallback = () => {
+        setTooltip('');
+        setCurrentTile(undefined);
+        setIsSelectingUnit(true);
+    }
+
+    // Score calculation (Scoring Stage)
+    const scoring = () => {
+        const score = (new TilesMap(map)).calculateScore(tileSize);
+        console.log(score);
+
+        setStage('endOfTurn');
+    }
+
     return (
+
         <div
             className={twJoin(
                 "h-full w-full relative"
             )}
-
             // Tile-cursor
             onMouseMove={handleMouseMove}
             onMouseOver={handleMouseEnter}
@@ -97,33 +118,52 @@ export const Board: React.FC<BoardProps> = ({
         >
 
             {/* Show cursor with the current tile */}
-            {showTile && currentTile && (
-                <img
-                    className="pointer-events-none"
-                    draggable="false"
-                    src={`/tiles/${currentTile.design}.png`}
-                    alt=""
+            {showTile && currentTile &&
+                <div
+                    className={twJoin(
+                        "pointer-events-none",
+                        wrongAnimation && "animate-shake"
+                    )}
                     style={{
                         position: 'absolute',
-                        left: tilePosition.x - tileSize * mapScale / 2 + 'px',
-                        top: tilePosition.y - tileSize * mapScale / 2 - 50 + 'px',
                         width: tileSize * mapScale + 'px',
                         height: tileSize * mapScale + 'px',
-                        transition: "transform 0.2s ease-in-out",
-                        transform: `rotate(${90 * currentTile.rotation}deg)`,
+                        left: tilePosition.x - tileSize * mapScale / 2 + 'px',
+                        top: tilePosition.y - tileSize * mapScale / 2 - 50 + 'px',
                         zIndex: 100,
+
                     }}
-                />
-            )}
+                >
+                    <img
+                        className=""
+                        draggable="false"
+                        src={`/tiles/${currentTile.design}.png`}
+                        alt=""
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            transform: `rotate(${90 * currentTile.rotation}deg)`,
+                            transition: "transform 0.2s ease-in-out",
+                        }}
+                    />
+                </div>
+            }
+            {/*<TileCursor />*/}
 
             {/* Unit Selector */}
             <UnitSelector
-                isSelectingUnit={isSelectingUnit}
-                setIsSelectingUnit={setIsSelectingUnit}
+                units={units[myTeam]}
                 PlacedTile={PlacedTile}
 
-                units={units[myTeam]}
+                isSelectingUnit={isSelectingUnit}
+                setIsSelectingUnit={setIsSelectingUnit}
+
+                placeUnitCallback={scoring}
             />
+
+            {/* Class loader for debug */}
+            <div className="hidden border-r-4 border-b-4 border-t-4 border-l-4 border-red-500"></div>
+            <div className="hidden border-r-8 border-b-8 border-t-8 border-l-8 border-red-500"></div>
 
             {/* Map */}
             <MapNavigation

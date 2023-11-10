@@ -1,4 +1,4 @@
-import {Tile} from "@pages/GamePage/classes/TilesDeck.tsx";
+import {BorderType, Tile} from "@pages/GamePage/classes/TilesDeck.tsx";
 
 interface IUnit {
     id: number;
@@ -7,7 +7,9 @@ interface IUnit {
     description: string;
     image: string;
     occupied: boolean;
+
     role: 'traveler' | 'scientist';
+    scoreMultiplier: {[key: string]: number}
 }
 
 export class Unit implements IUnit {
@@ -17,16 +19,35 @@ export class Unit implements IUnit {
     public name: string;
     public description: string;
     public image: string;
-    public occupied: boolean;
+
     public role: 'traveler' | 'scientist';
+    public scoreMultiplier: {[key: string]: number} = {city: 1, field1: 1, field2: 1, road1: 1, road2: 1, road3: 1, road4: 1 };
+
+    public occupied: boolean;
 
     constructor(unitData: IUnit) {
         this.id = unitData.id;
         this.name = unitData.name;
         this.description = unitData.description;
         this.image = unitData.image;
-        this.occupied = unitData.occupied;
+
         this.role = unitData.role;
+        this.scoreMultiplier = {...this.scoreMultiplier, ...unitData.scoreMultiplier}; // Rewrite default values
+
+        console.log(this.scoreMultiplier);
+
+        this.occupied = unitData.occupied;
+    }
+
+    private isDebug = false;
+
+    private debug(...args: any[]) {
+        if (this.isDebug)
+            console.log(...args);
+    }
+
+    private getSideName(side: 0 | 1 | 2 | 3) {
+        return {0: 't', 1: 'r', 2: 'b', 3: 'l'}[side];
     }
 
     public setTeam(team: string) {
@@ -45,13 +66,23 @@ export class Unit implements IUnit {
         }
     }
 
+    /**
+     * Return true if unit can be place on the last placed tile at `position` side.
+     *
+     * @param position
+     * @param map
+     * @param tileSize
+     */
     public canBePlacedOnMap(
         position: 0 | 1 | 2 | 3,
         map: Tile[],
         tileSize: number
     ): boolean {
-
-        console.log(map);
+        // Algorithm
+        // We will count units on the map.
+        // If it is more than 0, we can't place a unit on this border.
+        // We need to count the units on all the same borders.
+        // If it's a city at the top and a city at the bottom - check top and bottom tiles.
 
         // Get just placed tile
         let lastTile = map.at(-1) as Tile;
@@ -59,98 +90,153 @@ export class Unit implements IUnit {
         // The border name where the unit was placed
         const borderName = lastTile.borders[position];
 
-        // Algorithm
-        // We will count units on the map.
-        // If it is more than 0, we can't place a unit on this border.
-        // We need to count the units on all the same borders.
-        // If it's a city at the top and a city at the bottom - check top and bottom tiles.
-
-        let checkedIds: number[] = [];
+        let checkedIds: number[] = [lastTile.id];
 
         const countUnits = (tile: Tile, side: number) => {
-            let result = 0;
+            this.debug('----------- countUnits -----------');
+            let count = 0;
 
-            let mapSide = 0;
-            if(side === 0) mapSide = 2;
-            if(side === 1) mapSide = 3;
-            if(side === 2) mapSide = 0;
-            if(side === 3) mapSide = 1;
+            // A unit stays on this tile side, increase count
+            if (tile.units[side]) count += 1;
 
+            // The map side is opposite to the tile side ][
+            let mapSide: any = 0;
+            if (side === 0) mapSide = 2;
+            if (side === 1) mapSide = 3;
+            if (side === 2) mapSide = 0;
+            if (side === 3) mapSide = 1;
+
+            // Iterate all map tiles and search for the neighbors that are connected by the same border
             for (const mapTile of map) {
-                if(checkedIds.includes(mapTile.id)) continue; // Skip checked tiles
-                if(tile.id == mapTile.id) continue; // Skip the same tile
-                if(mapTile.borders[mapSide] != borderName) continue; // Skip tiles that are not connected to our
+                let className = 'border-red-600 scale-90';
 
-                if(
-                    (side == 0 || side == 2) &&
-                    (
-                        mapTile.coords.x != tile.coords.x ||
-                        Math.abs(mapTile.coords.y - tile.coords.y) > tileSize
-                    )
-                ) continue; // It is not a vertical neighbor
+                // Skip already checked tiles
+                if (checkedIds.includes(mapTile.id)) {
+                    this.debug('Already checked', mapTile.borders);
+                    continue; // Skip checked tiles
+                }
 
-                if(
-                    (side == 1 || side == 3) &&
-                    (
-                        Math.abs(mapTile.coords.x - tile.coords.x) > tileSize ||
-                        mapTile.coords.y != tile.coords.y
-                    )
-                ) continue; // It is not a horizontal neighbor
+                // Skip current tile
+                if (tile.id == mapTile.id) {
+                    this.debug('tile.id == mapTile.id');
+                    continue; // Skip the same tile
+                }
+
+                // Skip tiles that are not connected to our border
+                if (mapTile.borders[mapSide] != borderName) {
+                    if (this.isDebug) mapTile.className = 'opacity-50';
+                    this.debug('mapTile.borders[mapSide] != borderName');
+                    continue; // Skip tiles that are not connected to our
+                }
+
+                // Skip tiles that are not corresponding to the current tile side
+                // If we check the left side of the current tile,
+                // then we need to check only one neighbor that is on the left side
+                if (
+                    (side == 0 && (mapTile.coords.x != tile.coords.x || mapTile.coords.y - tile.coords.y != -tileSize)) ||
+                    (side == 2 && (mapTile.coords.x != tile.coords.x || mapTile.coords.y - tile.coords.y != tileSize)) ||
+                    (side == 1 && (mapTile.coords.x - tile.coords.x != tileSize || mapTile.coords.y != tile.coords.y)) ||
+                    (side == 3 && (mapTile.coords.x - tile.coords.x != -tileSize || mapTile.coords.y != tile.coords.y))
+                ) {
+                    if (this.isDebug) mapTile.className = 'opacity-50';
+                    this.debug('It is not a neighbor');
+                    continue; // It is not a neighbor
+                }
+
+                this.debug(mapTile.borders);
+
+                // --- This tile is a right neighbor --- //
 
                 // We have checked this tile
                 checkedIds.push(mapTile.id);
 
-                // --- This tile is a neighbor --- //
+                // Check if there is a unit on this side
+                if (mapTile.units[mapSide]) count++;
 
-                // Check if there is a unit on the neighbor
-                if(mapTile.units[(mapSide + 0) % 4])
-                    result += 1;
-                if(mapTile.units[(mapSide + 1) % 4])
-                    result += 1;
-                if(mapTile.units[(mapSide + 2) % 4])
-                    result += 1;
-                if(mapTile.units[(mapSide + 3) % 4])
-                    result += 1;
+                // -------------------------------------- //
+                // Check for units on other sides of the neighbor that matches the border (check all cities, fields, etc)
+                // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< //
 
-                // Check other sides of the neighbor that is the same border (check all cities, fields, etc)
-                if(mapTile.borders[(mapSide + 1) % 4])
-                    result += countUnits(mapTile, (mapSide + 1) % 4);
+                // If it's a road end, stop checking because this road can't be connected to other roads.
+                if(borderName == 'road' && mapTile.roadEnd) break;
 
-                if(mapTile.borders[(mapSide + 2) % 4])
-                    result += countUnits(mapTile, (mapSide + 2) % 4);
+                // Business logic for a field that cannot go through the tile center
+                if (
+                    borderName == 'field' &&
+                    mapTile.borders[(mapSide + 1) % 4] != 'field' &&
+                    mapTile.borders[(mapSide + 3) % 4] != 'field'
+                ) continue;
 
-                if(mapTile.borders[(mapSide + 3) % 4])
-                    result += countUnits(mapTile, (mapSide + 3) % 4);
+                className += ` border-${this.getSideName(mapSide)}-8`;
+
+                // Count units on other sides of the neighbor that matches the border
+                for (let mapSideOffset = 1; mapSideOffset < 4; mapSideOffset++) {
+                    mapSide = (mapSide + mapSideOffset) % 4;
+
+                    if (borderName == mapTile.borders[mapSide]) {
+                        className += ` border-${this.getSideName(mapSide)}-4`;
+                        this.debug('go to ', mapSide);
+                        count += countUnits(mapTile, mapSide);
+                    }
+                }
+
+                // For debug visualize algorithm
+                if (this.isDebug) mapTile.className = className;
             }
 
-            return result;
+            return count;
         }
 
-        let result = 0;
-        if(borderName == lastTile.borders[position % 4])
-            result += countUnits(lastTile, position % 4);
+        // Count units at the same borders on four sides
+        let count = 0;
 
-        if(borderName == lastTile.borders[(position + 1) % 4])
-            result += countUnits(lastTile, (position + 1) % 4);
+        // Position + 0
+        if (borderName == lastTile.borders[position])
+            count += countUnits(lastTile, position);
 
-        if(borderName == lastTile.borders[(position + 2) % 4])
-            result += countUnits(lastTile, (position + 2) % 4);
+        // If it's a road end, stop checking because this road can't be connected to other roads.
+        if(borderName == 'road' && lastTile.roadEnd) return count === 0;
 
-        if(borderName == lastTile.borders[(position + 3) % 4])
-            result += countUnits(lastTile, (position + 3) % 4);
+        // Business logic for a field that cannot go through the tile center
+        if (
+            borderName == 'field' &&
+            lastTile.borders[(position + 1) % 4] != 'field' &&
+            lastTile.borders[(position + 3) % 4] != 'field'
+        ) {
+            return count === 0;
+        }
 
-        console.log(result);
-        return result === 0;
+        // Position + 1
+        position = (position + 1) % 4 as any;
+        if (borderName == lastTile.borders[position])
+            count += countUnits(lastTile, position);
+
+        // Position + 2
+        position = (position + 2) % 4 as any;
+        if (borderName == lastTile.borders[position])
+            count += countUnits(lastTile, position);
+
+        // Position + 3
+        position = (position + 3) % 4 as any;
+        if (borderName == lastTile.borders[position])
+            count += countUnits(lastTile, position);
+
+        this.debug('Units count: ' + count);
+
+        // If there is no units on this border type, we can place unit here - return true
+        return count === 0;
     }
 }
 
+/* ----- Units definition ----- */
 const traveler = new Unit({
     id: 0,
     name: 'Николай Михайлович Пржевальский',
     description: 'Никола́й Миха́йлович Пржева́льский — русский путешественник, географ и натуралист, почётный член Русского географического общества. Предпринял несколько экспедиций в Центральную Азию, во время которых изучил территорию Монголии, Китая и Тибета. Генерал-майор. Брат адвоката Владимира и математика Евгения Пржевальских',
     image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDDNnZ-mO6UTZ4jSDCWlQ27RbJVmjr67Jw-w1uWqhH3z5S61OoT8JSmjxO4E03U5HXbBA&usqp=CAU',
     occupied: false,
-    role: 'traveler'
+    role: 'traveler',
+    scoreMultiplier: {road1: 2, road2: 2, road3: 2, road4: 2}
 });
 
 const scientist = new Unit({
@@ -159,14 +245,21 @@ const scientist = new Unit({
     description: 'Васи́лий Васи́льевич Докуча́ев — русский геолог и почвовед, профессор минералогии и кристаллографии Санкт-Петербургского университета, директор Ново-Александрийского института сельского хозяйства и лесоводства. Известен как основоположник школы научного почвоведения и географии почв.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Dokuchaev_1888.jpg/274px-Dokuchaev_1888.jpg',
     occupied: false,
-    role: 'scientist'
+    role: 'scientist',
+    scoreMultiplier: {field1: 2, field2: 2}
 });
+/* ----- Units definition ----- */
 
+// Set of units
 const listOfUnits = [
     traveler,
     scientist
 ];
 
+/**
+ * Get a list of units and set a team for every unit.
+ * @param team
+ */
 function getUnitsByTeam(team: string) {
     return listOfUnits.map(unit => {
         const teamUnit = new Unit(unit);
@@ -174,9 +267,8 @@ function getUnitsByTeam(team: string) {
     });
 }
 
+// Units divided by teams
 export const units = {
     blue: getUnitsByTeam('blue'),
     red: getUnitsByTeam('red'),
 };
-
-console.log(units);
