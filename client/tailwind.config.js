@@ -16,10 +16,10 @@ module.exports = {
                       '#f7f5ff',
                   'app-dark':
                       '#e7e7ff',
-                  'app-gray':
-                      '#777777',
                   'app-light':
                       '#f1f1f1',
+                  'app-gray':
+                      '#777777',
                   'app-primary':
                       '#818cf8',
                   'app-secondary':
