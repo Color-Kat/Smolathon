@@ -69,6 +69,10 @@ export const useMultiplayer = (multiplayerState: IMultiplayerState) => {
                 playerLeaveRoomHandler(response);
                 break;
 
+            case 'syncSelectedUnits':
+                syncSelectedUnitsHandler(response);
+                break;
+
             case 'startGame':
                 startGameHandler(response);
                 break;
@@ -94,7 +98,7 @@ export const useMultiplayer = (multiplayerState: IMultiplayerState) => {
     /* <<<<<<<<<<<<< Send events to the server >>>>>>>>>>>>>>>> */
 
     // Connect to the websocket server
-    const {sendToWebsocket} = useWebsocket('ws://localhost:5001/multiplayer', handleMultiplayerEvents);
+    const {sendToWebsocket} = useWebsocket('ws://localhost:5000/multiplayer', handleMultiplayerEvents);
 
     /**
      * Try to connect user and setUserId to this connection
@@ -134,11 +138,12 @@ export const useMultiplayer = (multiplayerState: IMultiplayerState) => {
         });
     };
 
-    const startGame = (roomId: string) => {
+    const ready = (roomId: string, data: {teamColor: string, selectedUnits: Unit[]}) => {
         sendToWebsocket({
-            method: 'startGame',
+            method: 'ready',
             userId: multiplayerState.user.id,
             roomId: roomId,
+            data: data
         });
 
         // multiplayerState.setStage('emptyMap');
@@ -194,6 +199,23 @@ export const useMultiplayer = (multiplayerState: IMultiplayerState) => {
             multiplayerState.setMyTeamColor(null);
     }
 
+    /**
+     * Sync selected units for other players.
+     * @param response
+     */
+    const syncSelectedUnitsHandler = (response: {
+        teamColor: TeamColorType,
+        selectedUnits: Unit[]
+    }) => {
+        multiplayerState.setTeams(prev => {
+            const teams = {...prev};
+
+            teams[response.teamColor]?.setUnits(response.selectedUnits.map(unit => new Unit(unit)));
+
+            return teams;
+        });
+    }
+
     const startGameHandler = (response: { teamsList: TeamColorType[] }) => {
         multiplayerState.setStage('emptyMap'); // Init empty map
 
@@ -244,7 +266,7 @@ export const useMultiplayer = (multiplayerState: IMultiplayerState) => {
         connectUser,
         freeRooms,
         joinRoom,
-        startGame,
+        ready,
         passTheMove,
         leaveRoom
     };

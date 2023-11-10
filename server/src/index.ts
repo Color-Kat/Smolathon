@@ -6,7 +6,7 @@ import {router} from "./routes/router.js";
 import {MultiPlayerController} from "./Controllers/MultiPlayerController.js";
 
 // console.log(new TestController());
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
 const wsServer = expressWs(express());
 const app = wsServer.app;

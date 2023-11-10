@@ -10,6 +10,7 @@ import {twJoin} from "tailwind-merge";
 import mapIcon from "@assets/icons/map.png";
 import noUnitImage from "@assets/icons/noUnit.png";
 import {BsFillPersonFill} from "react-icons/bs";
+import {Team} from "@pages/GamePage/classes/teams.ts";
 
 interface StartGameScreenProps {
     roomId: string;
@@ -20,8 +21,8 @@ const MY_UNITS_MAX_COUNT = 5;
 export const StartGameScreen: React.FC<StartGameScreenProps> = memo(({
                                                                          roomId,
                                                                      }) => {
-    const {startGame, leaveRoom} = useContext(MultiplayerContext);
-    const {teams, setMyTeamColor, myTeamColor, setTooltip} = useContext(MapContext);
+    const {ready, leaveRoom} = useContext(MultiplayerContext);
+    const {teams, setTeams, setMyTeamColor, myTeamColor, setTooltip} = useContext(MapContext);
 
     const listOfUnits = getUnitsByTeam(myTeamColor);
     const [unitInformation, setUnitInformation] = useState<Unit | null>(null);
@@ -32,11 +33,22 @@ export const StartGameScreen: React.FC<StartGameScreenProps> = memo(({
         setMyTeamColor(null);
     }
 
-    const handleStartGame = () => {
+    const handleReady = () => {
         if (selectedUnits.length < MY_UNITS_MAX_COUNT)
             return setTooltip("Выберите 5 Смолян");
 
-        startGame(roomId);
+        setTeams(prev => {
+            const teams = {...prev}
+            teams[myTeamColor]?.setUnits(selectedUnits);
+            return teams;
+        })
+
+        ready(roomId, {
+            teamColor: myTeamColor,
+            selectedUnits: selectedUnits
+        });
+
+        setTooltip("");
     }
 
     return (
@@ -61,11 +73,11 @@ export const StartGameScreen: React.FC<StartGameScreenProps> = memo(({
                         </div>
 
                         <RippleButton
-                            onClick={handleStartGame}
+                            onClick={handleReady}
                             ButtonComponent={PurpleButton}
                             className="w-full"
                         >
-                            Начать игру
+                            Я готов
                         </RippleButton>
 
                         <RippleButton
@@ -140,7 +152,7 @@ export const StartGameScreen: React.FC<StartGameScreenProps> = memo(({
 
                         {/*  Unit information  */}
 
-                        <div className="border-t-2 border-slate-300 mt-2 pt-2 h-[75px] relative">
+                        <div className="border-t-2 border-slate-300 mt-2 pt-2 h-[75px] relative leading-5">
                             {unitInformation ? <>
                                 <b>Бонус:</b><br/>
                                 {unitInformation?.bonusDescription}
@@ -207,7 +219,7 @@ export const StartGameScreen: React.FC<StartGameScreenProps> = memo(({
                                         key={unitNumber + 990}
                                         title="Пусто"
                                     >
-                                        <BsFillPersonFill className="text-4xl text-slate-700"/>
+                                        <BsFillPersonFill className="text-5xl text-slate-700"/>
 
                                         <div>Пусто</div>
                                     </button>
