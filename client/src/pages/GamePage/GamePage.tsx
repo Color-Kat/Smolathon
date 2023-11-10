@@ -16,7 +16,9 @@ export const GamePage = () => {
 
     // States for information about current tile and moves
     const [tileInformation, setTitleInformation] = useState("");
-    const [tooltip, setTooltip] = useState("")
+    const [tooltip, setTooltip] = useState("");
+
+    console.log(tooltip);
 
     const takeTile = () => {
         if (deck.length == 0 || currentTile) return;
@@ -31,10 +33,12 @@ export const GamePage = () => {
     const rotateTile = (rotateValue: number) => {
         if (!currentTile) return;
 
+        if(rotateValue < 0) rotateValue = 4 + rotateValue;
+
         setCurrentTile((tile) => (tile ?
             {
                 ...tile,
-                rotation: (tile.rotation + rotateValue) % 4,
+                rotation: Math.abs((tile.rotation + rotateValue))  % 4,
             } : undefined
         ));
     }
@@ -74,7 +78,7 @@ export const GamePage = () => {
         // passTheTurn() 
     }
 
-    console.log(currentTile);
+    // console.log(currentTile);
 
     return (
         <div className="w-full h-full cursor-default">
@@ -83,9 +87,9 @@ export const GamePage = () => {
                 <link rel="canonical" href={import.meta.env.VITE_APP_URL + '/game'} />
             </Helmet>
 
-            <div className="flex h-full">
+            <div className="flex h-full w-full">
                 {/* Control Panel */}
-                <div className="h-full flex flex-col items-center px-3 py-5 bg-gray-300 w-56 relative z-10">
+                <div className="h-full w-56 flex flex-col items-center px-3 py-5 bg-gray-300 absolute z-10">
                     <div className="w-48 h-48 relative mb-16  transition-all">
                         {/* Top tile */}
                         {deck.length > 0 && <img
@@ -116,7 +120,6 @@ export const GamePage = () => {
                         <button onClick={rotateTileRight} className="h-8 bg-zinc-500/70 hover:bg-zinc-500/50 rounded-md text-white flex-1">Вправо</button>
                     </div>
                 </div>
-
 
                 {/* Board with map */}
                 <Board
