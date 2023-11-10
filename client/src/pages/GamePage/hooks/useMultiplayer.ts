@@ -11,6 +11,7 @@ import {ISyncDataResponse, MultiplayerSyncRequest} from "@pages/GamePage/hooks/m
 interface IMultiplayerState {
     user: IUser;
 
+    stage: GameStagesType;
     setStage: React.Dispatch<React.SetStateAction<GameStagesType>>;
 
     setDeck: React.Dispatch<React.SetStateAction<Tile[]>>;
@@ -102,8 +103,6 @@ export const useMultiplayer = (multiplayerState: IMultiplayerState) => {
     const joinRoom = (roomId: string, user: IUser) => {
         if(!roomId) return false;
 
-        console.log('i must join the room!')
-
         sendToWebsocket({
             method: 'joinRoom',
             userId: multiplayerState.user.id,
@@ -174,12 +173,15 @@ export const useMultiplayer = (multiplayerState: IMultiplayerState) => {
 
     const startGameHandler = (response: { teamsList: TeamColorType[] }) => {
         multiplayerState.setStage('emptyMap'); // Init empty map
+
+        // multiplayerState.setDeck()
         // multiplayerState.setTeams(getTeamsByColors(response.teamsList)); // Set list of teams that are connected to this room
     };
 
     const passTheMoveHandler = (response: { isCurrentPlayer: boolean }) => {
+        // if(multiplayerState.stage === 'notStarted') return;
+
         if (response.isCurrentPlayer) {
-            // TODO карта на прогружается
             multiplayerState.setStage('takeTile');
         } else
             multiplayerState.setStage('wait');
@@ -190,6 +192,8 @@ export const useMultiplayer = (multiplayerState: IMultiplayerState) => {
      * @param response
      */
     const syncDataHandler = (response: ISyncDataResponse) => {
+        // if(multiplayerState.stage === 'notStarted') return;
+
         // Hydrate deck object
         const deck: Tile[] = TilesDeck.hydrate(response.data.deck);
 

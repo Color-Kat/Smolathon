@@ -15,6 +15,8 @@ import {RainbowLoader} from "@UI/Loaders";
 import {StartGameScreen} from "@pages/GamePage/modules/StartGameScreen/StartGameScreen.tsx";
 import {ComposeContexts, contextProvider} from "@components/Helpers";
 import {GameOverScreen} from "@pages/GamePage/modules/GameOverScreen/GameOverScreen.tsx";
+import {useTSelector} from "@hooks/redux.ts";
+import {YourMove} from "@pages/GamePage/Components/YourMove.tsx";
 
 const user: IUser = {
     id: Date.now().toString(),
@@ -23,13 +25,14 @@ const user: IUser = {
 
 /**
  * This component renders the game page.
- * It is responsible for global state of the game,
+ * It is responsible for the global state of the game,
  * and it provides an interface for multiplayer realization.
  *
  * @constructor
  */
 export const GamePage = () => {
     const [roomId, setRoomId] = useState("");
+    const user = useTSelector(state => state.auth.user) as IUser;
 
     const [myTeamColor, setMyTeamColor] = useState<TeamColorType | null>(null); // Will be set by server
     const [teams, setTeams] = useState<TeamsType>(defaultTeams);
@@ -64,7 +67,7 @@ export const GamePage = () => {
         leaveRoom
     } = useMultiplayer({
         user,
-        setStage,
+        stage, setStage,
         setDeck,
         setMyTeamColor, teams, setTeams,
         map, setMap,
@@ -124,7 +127,12 @@ export const GamePage = () => {
         });
     };
 
-    console.log('STAGE:', stage);
+    const skipTheMove = () => {
+        setCurrentTile(undefined);
+        handlePassTheMove()
+    }
+    // console.log('STAGE:', stage);
+    // console.log(deck)
 
     return (
         // Compose context providers
@@ -144,6 +152,7 @@ export const GamePage = () => {
                     setTeams,
 
                     tileSize: 192,
+                    setDeck,
                     map,
                     setMap,
                     currentTile,
@@ -163,8 +172,8 @@ export const GamePage = () => {
                     roomId,
                     joinRoom,
                     startGame,
-                    // passTheMove,
-                    leaveRoom
+                    leaveRoom,
+                    passTheMove,
                 }
             )
         ]}>
@@ -189,12 +198,14 @@ export const GamePage = () => {
                 {/* Game */}
                 {stage !== 'notStarted' &&
                     <div className="flex h-full w-full relative">
+
                         {/* Control panel with buttons and the deck of tiles */}
                         <ControlPanel
                             currentTile={currentTile}
                             setCurrentTile={setCurrentTile}
                             deck={deck}
                             setDeck={setDeck}
+                            skipTheMove={skipTheMove}
                         />
 
                         {/* Users list and score */}
@@ -209,6 +220,9 @@ export const GamePage = () => {
 
                             endOfTurn={endOfTurn}
                         />
+
+                        {stage == 'takeTile' && !currentTile && <YourMove />}
+
                     </div>
                 }
 
@@ -216,6 +230,7 @@ export const GamePage = () => {
                 {stage == 'gameOver' &&
                     <GameOverScreen
                         winners={winners}
+                        setWinners={setWinners}
                         user={user}
                         roomId={roomId}
                         setRoomId={setRoomId}
@@ -233,6 +248,7 @@ export const GamePage = () => {
                     setTileInformation={setTileInformation}
                     setUnitInformation={setUnitInformation}
                 />
+
             </div>
         </ComposeContexts>
     );
