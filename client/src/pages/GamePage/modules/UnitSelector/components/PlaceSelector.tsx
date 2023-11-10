@@ -4,6 +4,8 @@ import {twJoin} from "tailwind-merge";
 import {Unit} from "@pages/GamePage/classes/Units.ts";
 import {Tile} from "@pages/GamePage/classes/TilesDeck.tsx";
 
+import {MapContext} from '@pages/GamePage/mapContext.ts';
+
 interface PlaceSelectorProps {
     selectedUnit: Unit | null;
     setMap: React.Dispatch<React.SetStateAction<Tile[]>>;
@@ -23,12 +25,15 @@ const UnitPlace: React.FC<UnitPlaceProps> = memo(({
                                                       selectedUnit,
                                                       position,
                                                       setMap,
-                                                      closeSelectingUnit
+                                                      closeSelectingUnit,
                                                   }) => {
+    const {map, tileSize, setTooltip} = React.useContext(MapContext);
 
     // Place unit on the placed tile
     const placeUnit = () => {
-        if (selectedUnit)
+        const canBePlaced = selectedUnit?.canBePlacedOnMap(position, map, tileSize)
+
+        if (selectedUnit && canBePlaced) {
             // Add unit to the tile on the map
             setMap(prev => {
                 const newMap = [...prev];
@@ -36,8 +41,10 @@ const UnitPlace: React.FC<UnitPlaceProps> = memo(({
                 return newMap;
             });
 
-        // Close unit selecting modal
-        closeSelectingUnit();
+            closeSelectingUnit(); // Close unit selecting modal
+        }
+
+        if(!canBePlaced) setTooltip("На этом объекте уже стоит другая фишка");
     };
 
     return (

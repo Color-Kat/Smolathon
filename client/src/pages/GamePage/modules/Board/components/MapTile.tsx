@@ -2,6 +2,7 @@ import React, {memo} from 'react';
 import {twJoin} from "tailwind-merge";
 import {Tile} from "@pages/GamePage/classes/TilesDeck.tsx";
 import {Unit} from "@pages/GamePage/classes/Units.ts";
+import {MapContext} from "@pages/GamePage/mapContext.ts";
 
 interface MapTileProps {
     tile: Tile;
@@ -25,8 +26,11 @@ const UnitOnTile: React.FC<UnitOnTileProps> = memo(({
                                                         unit,
                                                         position
                                                     }) => {
+    const {setUnitInformation} = React.useContext(MapContext);
+
     return (
         <img
+            onClick={() => setUnitInformation(unit)}
             className={twJoin(
                 "rounded-md h-20 absolute z-10 cursor-pointer object-contain",
                 "border-4",
@@ -47,8 +51,10 @@ const UnitOnTile: React.FC<UnitOnTileProps> = memo(({
 
 export const MapTile: React.FC<MapTileProps> = memo(({
                                                          tile,
-                                                         tileSize
+                                                         tileSize,
                                                      }) => {
+
+    const {setTileInformation} = React.useContext(MapContext);
 
     if (!tile.coords) return null;
 
@@ -60,12 +66,13 @@ export const MapTile: React.FC<MapTileProps> = memo(({
                 top: tile.coords.y,
                 left: tile.coords.x,
             }}
+            onClick={() => setTileInformation(tile)}
         >
             <div className="relative w-full h-full">
-                {tile.units[0] && <UnitOnTile position={0} unit={tile.units[0]}/>}
-                {tile.units[1] && <UnitOnTile position={1} unit={tile.units[1]}/>}
-                {tile.units[2] && <UnitOnTile position={2} unit={tile.units[2]}/>}
-                {tile.units[3] && <UnitOnTile position={3} unit={tile.units[3]}/>}
+                {tile.units[0] && <UnitOnTile position={0} unit={tile.units[0]} />}
+                {tile.units[1] && <UnitOnTile position={1} unit={tile.units[1]} />}
+                {tile.units[2] && <UnitOnTile position={2} unit={tile.units[2]} />}
+                {tile.units[3] && <UnitOnTile position={3} unit={tile.units[3]} />}
 
                 {tile.Image(tileSize)}
             </div>

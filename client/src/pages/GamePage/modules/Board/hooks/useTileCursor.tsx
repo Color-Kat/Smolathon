@@ -1,6 +1,7 @@
 import React, {MouseEventHandler, ReactNode, useMemo, useState} from "react";
 import {ITile} from "@pages/GamePage/classes/TilesDeck.ts";
 import {Tile} from "@pages/GamePage/classes/TilesDeck.tsx";
+import {MapContext} from "@pages/GamePage/mapContext.ts";
 
 
 interface ITileCursorParams {
@@ -13,7 +14,6 @@ interface ITileCursorParams {
     currentTile: Tile | undefined;
 
     placeTileCallback: () => void;
-    setTooltip: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export const useTileCursor = ({
@@ -25,10 +25,11 @@ export const useTileCursor = ({
 
                                   currentTile,
 
-                                  placeTileCallback,
-                                  setTooltip
+                                  placeTileCallback
 
                               }: ITileCursorParams) => {
+    const {setTooltip} = React.useContext(MapContext);
+
     const [wrongAnimation, setWrongAnimation] = useState(false);
 
     const [tilePosition, setTilePosition] = useState({x: 0, y: 0});
@@ -116,6 +117,12 @@ export const useTileCursor = ({
                 ))
             ) continue;
 
+            // This place is already occupied
+            if(tile.coords.y == mapTile.coords.y && tile.coords.x == mapTile.coords.x) {
+                setTooltip('Это место уже занято');
+                return false;
+            }
+
             // Increase count of neighbors
             neighborsCount++;
 
@@ -139,13 +146,9 @@ export const useTileCursor = ({
                 mapTileContactSide = 3;
             }
 
-            // Take into account the rotation
-            const tileBorderIndex = (4 + tileContactSide - tile.rotation) % 4;
-            const mapTileBorderIndex = (4 + mapTileContactSide - mapTile.rotation) % 4;
-
             // Get a name of the contracted sides
-            const tileBorder = tile.borders[tileBorderIndex];
-            const mapTileBorder = mapTile.borders[mapTileBorderIndex];
+            const tileBorder = tile.borders[tileContactSide];
+            const mapTileBorder = mapTile.borders[mapTileContactSide];
 
             // We can't place the tile when at least one neighbor is not equal by the side
             if (tileBorder !== mapTileBorder) {

@@ -1,10 +1,11 @@
 import React, {MouseEvent, useRef, useState, useEffect, Fragment, useCallback} from "react";
 import {twJoin, twMerge} from "tailwind-merge";
 
-import {ITile, Tile} from "../../classes/TilesDeck.tsx";
+import {ITile, Tile} from "../../classes/TilesDeck";
 
 import {MapNavigation} from "@modules/MapNavigation/MapNavigation.tsx";
 import {useTileCursor} from "./hooks/useTileCursor.tsx";
+import {Dialog, Transition} from "@headlessui/react";
 
 import tableWoodImage from "@assets/textures/tableWood.png";
 import {UnitSelector} from "@pages/GamePage/modules/UnitSelector/UnitSelector.tsx";
@@ -19,10 +20,9 @@ interface BoardProps {
     currentTile: Tile | undefined;
     setCurrentTile: React.Dispatch<React.SetStateAction<Tile | undefined>>;
 
-    units: {[key: string]: Unit[]};
+    units: { [key: string]: Unit[] };
     myTeam: string;
 
-    setTooltip: React.Dispatch<React.SetStateAction<string>>;
     endOfTurn: () => void;
 }
 
@@ -34,11 +34,10 @@ export const Board: React.FC<BoardProps> = ({
 
                                                 units, myTeam,
 
-                                                setTooltip,
                                                 endOfTurn
                                             }) => {
 
-    const tileSize = 198;
+    const tileSize = 192;
     const mapSize = tileSize * 70;
     const mapCenter = mapSize / 2 - tileSize / 2;
     const mapNavigationRef = useRef<HTMLUListElement>(null);
@@ -80,7 +79,6 @@ export const Board: React.FC<BoardProps> = ({
         setMap,
 
         currentTile,
-        setTooltip,
 
         placeTileCallback: openUnitSelectorModal
     });
@@ -125,7 +123,6 @@ export const Board: React.FC<BoardProps> = ({
                 PlacedTile={PlacedTile}
 
                 units={units[myTeam]}
-                setMap={setMap}
             />
 
             {/* Map */}
