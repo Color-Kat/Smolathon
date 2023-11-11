@@ -7,7 +7,7 @@ export type BorderType = 'city' | 'road' | 'field';
 export interface ITile {
     id: number;
     design: string;
-    pennant: boolean;
+    pennant?: boolean;
     borders: BorderType[];
     // objects: {city: number, road: number}[];
     rotation: number;
@@ -16,6 +16,10 @@ export interface ITile {
 
     units: (Unit | null)[];
     coords: { x: number, y: number };
+
+    name?: string | null;
+    realPhoto?: string | null;
+    description?: string | null;
 }
 
 export interface IMapTile extends ITile {
@@ -26,49 +30,91 @@ export interface IMapTile extends ITile {
 }
 
 class TilesDeck {
-    private deck = ([
+    private deck: Partial<ITile>[] = ([
+
+        /* --- New tiles 2 --- */
+        {id: 0, design: "A-1", borders: ['field', 'field', 'road', 'field'], roadEnd: true},
+        {id: 1, design: "B-1", borders: ['field', 'field', 'field', 'field']},
+        {id: 2, design: "C-1", borders: ['city', 'city', 'city', 'city']},
+        {id: 3, design: "D", borders: ['city', 'road', 'field', 'road']},
+        {id: 3, design: "D", borders: ['city', 'road', 'field', 'road']},
+        {id: 4, design: "E", borders: ['city', 'field', 'field', 'field']},
+        {id: 4, design: "E", borders: ['city', 'field', 'field', 'field']},
+        {id: 5, design: "F", borders: ['field', 'city', 'field', 'city'], pennant: true},
+        {id: 6, design: "G", borders: ['field', 'city', 'field', 'city']},
+        {id: 7, design: "H-1", borders: ['field', 'field', 'city', 'field']},
+        {id: 8, design: "I", borders: ['city', 'field', 'field', 'city']},
+        {id: 9, design: "I", borders: ['city', 'field', 'field', 'city']},
+        {id: 10, design: "J", borders: ['city', 'road', 'road', 'field']},
+        {id: 11, design: "J-1", borders: ['city', 'road', 'road', 'field']},
+        {id: 12, design: "K", borders: ['city', 'field', 'road', 'road']},
+        {id: 13, design: "K-1", borders: ['city', 'field', 'road', 'road']},
+        {id: 14, design: "L", borders: ['city', 'road', 'road', 'road']},
+        {id: 15, design: "L", borders: ['city', 'road', 'road', 'road']},
+        {id: 16, design: "M", borders: ['city', 'city', 'road', 'city'], pennant: true},
+        {id: 17, design: "N", borders: ['city', 'city', 'road', 'city']},
+        {id: 18, design: "N", borders: ['city', 'city', 'road', 'city']},
+        {id: 19, design: "O", borders: ['city', 'field', 'field', 'city'], pennant: true},
+        {id: 20, design: "O-1", borders: ['city', 'field', 'field', 'city']},
+        {id: 21, design: "P", borders: ['city', 'road', 'road', 'city']},
+        {id: 22, design: "P", borders: ['city', 'road', 'road', 'city']},
+        {id: 23, design: "R", borders: ['city', 'city', 'field', 'city']},
+        {id: 24, design: "S", borders: ['city', 'city', 'field', 'city'], pennant: true},
+        {id: 25, design: "S-1", borders: ['city', 'city', 'field', 'city'], pennant: true},
+        {id: 26, design: "T", borders: ['road', 'field', 'road', 'field']},
+        {id: 27, design: "T", borders: ['road', 'field', 'road', 'field']},
+        {id: 28, design: "T", borders: ['road', 'field', 'road', 'field']},
+        {id: 29, design: "V", borders: ['field', 'field', 'road', 'road']},
+        {id: 30, design: "V", borders: ['field', 'field', 'road', 'road']},
+        {id: 31, design: "V-1", borders: ['field', 'field', 'road', 'road']},
+        {id: 32, design: "W", borders: ['field', 'road', 'road', 'road']},
+        {id: 33, design: "W", borders: ['field', 'road', 'road', 'road']},
+        {id: 34, design: "W", borders: ['field', 'road', 'road', 'road']},
+        {id: 35, design: "X", borders: ['road', 'road', 'road', 'road']},
+        {id: 36, design: "X", borders: ['road', 'road', 'road', 'road']},
 
         /* --- New Tiles --- */
-        {id: 8, design: "D", borders: ['city', 'road', 'field', 'road'], rotation: 0},
-        {id: 9, design: "D", borders: ['city', 'road', 'field', 'road'], rotation: 0},
-        {id: 10, design: "D", borders: ['city', 'road', 'field', 'road'], rotation: 0},
-        {id: 11, design: "E", borders: ['city', 'field', 'field', 'field'], rotation: 0},
-        {id: 12, design: "E", borders: ['city', 'field', 'field', 'field'], rotation: 0},
-        {id: 13, design: "E", borders: ['city', 'field', 'field', 'field'], rotation: 0},
-        {id: 14, design: "E", borders: ['city', 'field', 'field', 'field'], rotation: 0},
-        {id: 15, design: "E", borders: ['city', 'field', 'field', 'field'], rotation: 0},
-        {id: 16, design: "F", borders: ['field', 'city', 'field', 'city'], pennant: true, rotation: 0},
-        {id: 17, design: "F", borders: ['field', 'city', 'field', 'city'], pennant: true, rotation: 0},
-        {id: 18, design: "G", borders: ['field', 'city', 'field', 'city'], rotation: 0},
-        {id: 22, design: "I", borders: ['city', 'field', 'field', 'city'], rotation: 0},
-        {id: 23, design: "I", borders: ['city', 'field', 'field', 'city'], rotation: 0},
-        {id: 24, design: "J", borders: ['city', 'road', 'road', 'field'], rotation: 0},
-        {id: 25, design: "J", borders: ['city', 'road', 'road', 'field'], rotation: 0},
-        {id: 26, design: "J", borders: ['city', 'road', 'road', 'field'], rotation: 0},
-        {id: 33, design: "M", borders: ['city', 'field', 'field', 'city'], pennant: true, rotation: 0},
-        {id: 34, design: "M", borders: ['city', 'field', 'field', 'city'], pennant: true, rotation: 0},
-        {id: 40, design: "P", borders: ['city', 'road', 'road', 'city'], rotation: 0},
-        {id: 41, design: "P", borders: ['city', 'road', 'road', 'city'], rotation: 0},
-        {id: 42, design: "P", borders: ['city', 'road', 'road', 'city'], rotation: 0},
-        {id: 50, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
-        {id: 51, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
-        {id: 52, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
-        {id: 53, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
-        {id: 54, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
-        {id: 55, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
-        {id: 56, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
-        {id: 57, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
-        {id: 58, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
-        {id: 59, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
-        {id: 60, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
-        {id: 61, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
-        {id: 62, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
-        {id: 63, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
-        {id: 64, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
-        {id: 65, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
-        {id: 66, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
-        {id: 38, design: "O", borders: ['city', 'road', 'road', 'city'], pennant: true, rotation: 0},
-        {id: 39, design: "O", borders: ['city', 'road', 'road', 'city'], pennant: true, rotation: 0},
+        // {id: 8, design: "D", borders: ['city', 'road', 'field', 'road'], rotation: 0},
+        // {id: 9, design: "D", borders: ['city', 'road', 'field', 'road'], rotation: 0},
+        // {id: 10, design: "D", borders: ['city', 'road', 'field', 'road'], rotation: 0},
+        // {id: 11, design: "E", borders: ['city', 'field', 'field', 'field'], rotation: 0},
+        // {id: 12, design: "E", borders: ['city', 'field', 'field', 'field'], rotation: 0},
+        // {id: 13, design: "E", borders: ['city', 'field', 'field', 'field'], rotation: 0},
+        // {id: 14, design: "E", borders: ['city', 'field', 'field', 'field'], rotation: 0},
+        // {id: 15, design: "E", borders: ['city', 'field', 'field', 'field'], rotation: 0},
+        // {id: 16, design: "F", borders: ['field', 'city', 'field', 'city'], pennant: true, rotation: 0},
+        // {id: 17, design: "F", borders: ['field', 'city', 'field', 'city'], pennant: true, rotation: 0},
+        // {id: 18, design: "G", borders: ['field', 'city', 'field', 'city'], rotation: 0},
+        // {id: 18, design: "G", borders: ['field', 'city', 'field', 'city'], rotation: 0},
+        // {id: 22, design: "I", borders: ['city', 'field', 'field', 'city'], rotation: 0},
+        // {id: 23, design: "I", borders: ['city', 'field', 'field', 'city'], rotation: 0},
+        // {id: 24, design: "J-1", borders: ['city', 'road', 'road', 'field'], rotation: 0},
+        // {id: 25, design: "J", borders: ['city', 'road', 'road', 'field'], rotation: 0},
+        // {id: 26, design: "J", borders: ['city', 'road', 'road', 'field'], rotation: 0},
+        // {id: 33, design: "M", borders: ['city', 'field', 'field', 'city'], pennant: true, rotation: 0},
+        // {id: 34, design: "M", borders: ['city', 'field', 'field', 'city'], pennant: true, rotation: 0},
+        // {id: 40, design: "P", borders: ['city', 'road', 'road', 'city'], rotation: 0},
+        // {id: 41, design: "P", borders: ['city', 'road', 'road', 'city'], rotation: 0},
+        // {id: 42, design: "P", borders: ['city', 'road', 'road', 'city'], rotation: 0},
+        // {id: 50, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
+        // {id: 51, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
+        // {id: 52, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
+        // {id: 53, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
+        // {id: 54, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
+        // {id: 55, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
+        // {id: 56, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
+        // {id: 57, design: "U", borders: ['road', 'field', 'road', 'field'], rotation: 0},
+        // {id: 58, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
+        // {id: 59, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
+        // {id: 60, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
+        // {id: 61, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
+        // {id: 62, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
+        // {id: 63, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
+        // {id: 64, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
+        // {id: 65, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
+        // {id: 66, design: "V", borders: ['field', 'field', 'road', 'road'], rotation: 0},
+        // {id: 38, design: "O", borders: ['city', 'road', 'road', 'city'], pennant: true, rotation: 0},
+        // {id: 39, design: "O", borders: ['city', 'road', 'road', 'city'], pennant: true, rotation: 0},
 
 
         // {id: 1, design: "A", borders: ['field', 'field', 'road', 'field'], rotation: 0, roadEnd: true},
@@ -170,9 +216,9 @@ export class Tile implements ITile {
     public roadEnd: boolean;
     public coords: { x: number, y: number };
 
-    public name: string = 'Успенский собор';
-    public description: string = 'Собо́р Успе́ния Пресвято́й Богоро́дицы — православный храм в Смоленске, кафедральный собор Смоленской митрополии Русской православной церкви. Находится в центральной части города на Соборной горе';
-    public realPhoto: string = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/%D0%92%D0%B8%D0%B4_%D0%B2%D0%B5%D1%87%D0%B5%D1%80%D0%BE%D0%BC.jpg/1280px-%D0%92%D0%B8%D0%B4_%D0%B2%D0%B5%D1%87%D0%B5%D1%80%D0%BE%D0%BC.jpg';
+    public name: string | null = 'Успенский собор';
+    public description: string | null = 'Собо́р Успе́ния Пресвято́й Богоро́дицы — православный храм в Смоленске, кафедральный собор Смоленской митрополии Русской православной церкви. Находится в центральной части города на Соборной горе';
+    public realPhoto: string | null = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/%D0%92%D0%B8%D0%B4_%D0%B2%D0%B5%D1%87%D0%B5%D1%80%D0%BE%D0%BC.jpg/1280px-%D0%92%D0%B8%D0%B4_%D0%B2%D0%B5%D1%87%D0%B5%D1%80%D0%BE%D0%BC.jpg';
 
     public className: string = ''; // Manually used for debug
 
@@ -186,12 +232,16 @@ export class Tile implements ITile {
         this.roadEnd = tile.roadEnd ?? false;
         this.coords = tile.coords ?? {x: -999, y: -999};
 
+        this.name = tile.name ?? null;
+        this.realPhoto = tile.realPhoto ?? null;
+        this.description = tile.description ?? null;
+
         // Default common values that doesn't depend on tile
         if (tile instanceof Tile) {
             this.rotation = tile.rotation ?? 0;
             this.units = tile.units ?? [null, null, null, null];
         } else {
-            if(tile.rotation) this.rotate(tile.rotation, false);
+            if(tile.rotation) this.rotate(tile.rotation ?? 0, false);
             this.units = tile.units?.map(unit => unit ? new Unit(unit) : null) ?? [null, null, null, null];
             // this.rotation = 0;
             // this.units = [null, null, null, null];
@@ -263,7 +313,7 @@ export class Tile implements ITile {
     public Image(tileSize = 198) {
         return (
             <img
-                className="rounded-sm shadow-md"
+                className="rounded-md shadow-md"
                 src={this.getImageUrl()}
                 draggable="false"
                 alt=""
