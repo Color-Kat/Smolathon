@@ -7,16 +7,17 @@ import {CTASection} from "@pages/HomePage/modules/CTASection.tsx";
 import {Page} from "@modules/PageTemplates";
 import {LogoGridSection} from "@pages/HomePage/modules/LogoGridSection.tsx";
 import {FaqSection} from "@pages/HomePage/modules/FAQSection.tsx";
+import {Rules} from "@pages/HomePage/modules/Rules.tsx";
 
 export const HomePage = () => {
     const user = useTSelector(state => state.auth.user);
 
     return (
-        <Page
+        <div
             className="w-screen pt-0"
         >
             <Helmet>
-                <title>Главная</title>
+                <title>СмолКассон - Главная</title>
                 <link rel="canonical" href={import.meta.env.VITE_APP_URL + '/'}/>
             </Helmet>
 
@@ -24,11 +25,13 @@ export const HomePage = () => {
 
             <FeaturesSection />
 
-            <FaqSection />
+            {/*<Rules />*/}
 
-            <LogoGridSection />
+            {/*<FaqSection />*/}
 
-            <CTASection />
-        </Page>
+            {/*<LogoGridSection />*/}
+
+            {/*<CTASection />*/}
+        </div>
     );
 };

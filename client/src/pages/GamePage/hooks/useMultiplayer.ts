@@ -98,7 +98,7 @@ export const useMultiplayer = (multiplayerState: IMultiplayerState) => {
     /* <<<<<<<<<<<<< Send events to the server >>>>>>>>>>>>>>>> */
 
     // Connect to the websocket server
-    const {sendToWebsocket} = useWebsocket('ws://localhost:5000/multiplayer', handleMultiplayerEvents);
+    const {sendToWebsocket} = useWebsocket('ws://localhost:5001/multiplayer', handleMultiplayerEvents);
 
     /**
      * Try to connect user and setUserId to this connection
