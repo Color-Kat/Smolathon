@@ -11,8 +11,8 @@ Online board game in Smolensk style with multiplayer.
 6. `npm i` - install dependencies for server
 7. `npm run start` - run server
 
-Не успели до конца доделать выбор Смолян, выбранные игроками смоляне не синхронизируется между ними. Сейчас работаем над этим
-После добавления большего количества Смолян не успели настроить их бонусы
+Нарисованные тайлы с достопримечательностяими
+https://disk.yandex.ru/d/Tnz6bEX8egtDgQ
 
 
 ![img.png](img.png)
